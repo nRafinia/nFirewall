@@ -1,9 +1,7 @@
-﻿using System.Collections.Concurrent;
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Caching.Memory;
-using nFirewall.Application;
 using nFirewall.Application.Services;
+using nFirewall.Application.Shared;
 using nFirewall.Domain.Models;
 using nFirewall.Domain.Shared;
 
@@ -14,12 +12,10 @@ public class LogRequestsMiddleware
     private readonly IQueueManager _queueManager;
 
     private readonly RequestDelegate _next;
-    private readonly ConcurrentDictionary<string, RequestData> _currentRequests;
 
     public LogRequestsMiddleware(RequestDelegate next, IQueueManager queueManager)
     {
         _next = next;
-        _currentRequests = new ConcurrentDictionary<string, RequestData>();
         _queueManager = queueManager;
     }
 
@@ -32,8 +28,9 @@ public class LogRequestsMiddleware
 
         var requestData = new RequestData(traceIdentifier,
             context.Connection.RemoteIpAddress?.ConvertFromIpAddressToNumber() ?? 0,
-            startTime, path, nameIdentifier);
-        _currentRequests.TryAdd(traceIdentifier, requestData);
+            startTime, path, nameIdentifier, context.Connection);
+        
+        RequestDataList.Add(requestData);
 
         try
         {
@@ -57,6 +54,5 @@ public class LogRequestsMiddleware
         requestData.SetFinishData(statusCode, contentType, finishTime, ex?.Message);
 
         _queueManager.EnqueueRequest(requestData);
-
     }
 }
