@@ -42,12 +42,8 @@ public static class ConfigurationService
     {
         app.UseMiddleware<BlockRequestsMiddleware>();
         app.UseMiddleware<LogRequestsMiddleware>();
-
-        app.MapGet($"/{reportPath}",
-            async ([FromServices] IEnumerable<IReportContainer> dataProcessors, string? type) =>
-            await GetFirewallData(dataProcessors, type));
-
-
+        app.UseMiddleware<GetFirewallDataMiddleware>();
+        
         return app;
     }
 
@@ -90,26 +86,6 @@ public static class ConfigurationService
         {
             services.AddSingleton(typeof(IReportContainer), module);
         }
-    }
-
-    private static async Task<IResult> GetFirewallData([FromServices] IEnumerable<IReportContainer> dataProcessors,
-        string? type)
-    {
-        if (string.IsNullOrWhiteSpace(type))
-        {
-            return Results.Empty;
-        }
-
-        var dataProcessor = dataProcessors.FirstOrDefault(d =>
-            string.Equals(d.Name, type, StringComparison.CurrentCultureIgnoreCase));
-
-        if (dataProcessor is null)
-        {
-            return Results.Empty;
-        }
-
-        var result = await dataProcessor.GetData();
-        return Results.Ok(result);
     }
 
     #endregion
