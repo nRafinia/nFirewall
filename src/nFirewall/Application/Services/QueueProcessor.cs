@@ -1,4 +1,5 @@
-﻿using nFirewall.Application.DataProcessors;
+﻿using Microsoft.Extensions.Logging;
+using nFirewall.Application.DataProcessors;
 using nFirewall.Domain.Models;
 
 namespace nFirewall.Application.Services;
@@ -7,14 +8,16 @@ public class QueueProcessor : IQueueProcessor
 {
     private readonly IQueueManager _queueManager;
     private readonly IEnumerable<IDataProcessor> _dataProcessors;
+    private readonly ILogger<QueueProcessor> _logger;
 
     private readonly PeriodicTimer _timer = new(TimeSpan.FromSeconds(1));
     private bool _stopProcessData;
 
-    public QueueProcessor(IQueueManager queueManager, IEnumerable<IDataProcessor> dataProcessors)
+    public QueueProcessor(IQueueManager queueManager, IEnumerable<IDataProcessor> dataProcessors, ILogger<QueueProcessor> logger)
     {
         _queueManager = queueManager;
         _dataProcessors = dataProcessors;
+        _logger = logger;
     }
 
     #region Private methods
@@ -26,8 +29,14 @@ public class QueueProcessor : IQueueProcessor
             var requestData = _queueManager.DequeueRequest();
             while (requestData is not null)
             {
-                await ProcessData(requestData.Value, cancellationToken);
-
+                try
+                {
+                    await ProcessData(requestData.Value, cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, ex.Message);
+                }
                 requestData = _queueManager.DequeueRequest();
             }
 

@@ -10,7 +10,7 @@
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <Description>Simple firewall for .NET 7 or later</Description>
         <Product>nFirewall</Product>
-        <version>0.2.0.0</version>
+        <version>0.2.2.0</version>
         <Authors>https://github.com/nRafinia</Authors>
         <Company>https://github.com/nRafinia</Company>
         <License>https://opensource.org/licenses/AGPL-3.0</License>

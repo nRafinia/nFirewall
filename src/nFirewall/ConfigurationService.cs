@@ -1,9 +1,6 @@
 using System.Reflection;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using nFirewall.Application.Abstractions;
@@ -33,7 +30,7 @@ public static class ConfigurationService
         AddBlockModules(services);
         AddReportContainer(services);
 
-        services.AddMemoryCache();
+        //services.AddMemoryCache();
 
         return services;
     }
