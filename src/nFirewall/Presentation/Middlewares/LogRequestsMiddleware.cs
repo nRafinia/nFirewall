@@ -7,7 +7,7 @@ using nFirewall.Application.Services;
 using nFirewall.Domain.Models;
 using nFirewall.Domain.Shared;
 
-namespace nFirewall.Presentation;
+namespace nFirewall.Presentation.Middlewares;
 
 public class LogRequestsMiddleware
 {
@@ -15,13 +15,11 @@ public class LogRequestsMiddleware
     private readonly ILogger<LogRequestsMiddleware> _logger;
 
     private readonly RequestDelegate _next;
-    private readonly ConcurrentDictionary<string, RequestData> _currentRequests;
 
     public LogRequestsMiddleware(RequestDelegate next, IQueueManager queueManager,
         ILogger<LogRequestsMiddleware> logger)
     {
         _next = next;
-        _currentRequests = new ConcurrentDictionary<string, RequestData>();
         _queueManager = queueManager;
         _logger = logger;
     }
@@ -32,6 +30,7 @@ public class LogRequestsMiddleware
         var traceIdentifier = context.TraceIdentifier;
         var path = context.Request.Path.ToString();
         var nameIdentifier = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+        
         var ip = IPAddress.Parse("0.0.0.0");
         if (context.Connection.RemoteIpAddress is not null)
         {
@@ -40,11 +39,8 @@ public class LogRequestsMiddleware
                 : context.Connection.RemoteIpAddress;
         }
 
-        _logger.LogDebug("New request from {IP}, Path={Path}", ip, path);
-
         var requestData = new RequestData(traceIdentifier, ip.ConvertFromIpAddressToNumber(), startTime, path,
             nameIdentifier);
-        _currentRequests.TryAdd(traceIdentifier, requestData);
 
         try
         {
@@ -52,6 +48,7 @@ public class LogRequestsMiddleware
         }
         catch (Exception ex)
         {
+            // ReSharper disable once TemplateIsNotCompileTimeConstantProblem
             _logger.LogError(ex, ex.Message);
             ProcessFinishedRequest(requestData, context, ex);
             throw;

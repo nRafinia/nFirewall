@@ -10,6 +10,8 @@ using nFirewall.Application.Services;
 using nFirewall.Domain.Shared;
 using nFirewall.Persistence;
 using nFirewall.Presentation;
+using nFirewall.Presentation.HostedServices;
+using nFirewall.Presentation.Middlewares;
 
 namespace nFirewall;
 

@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using nFirewall.Application.DataProcessors;
 using nFirewall.Domain.Models;
+using nFirewall.Domain.Shared;
 
 namespace nFirewall.Application.Services;
 
@@ -11,17 +12,20 @@ public class QueueProcessor : IQueueProcessor
     private readonly ILogger<QueueProcessor> _logger;
 
     private readonly PeriodicTimer _timer = new(TimeSpan.FromSeconds(1));
+    private readonly RoundRobinExecutor _executor;
     private bool _stopProcessData;
 
-    public QueueProcessor(IQueueManager queueManager, IEnumerable<IDataProcessor> dataProcessors, ILogger<QueueProcessor> logger)
+    public QueueProcessor(IQueueManager queueManager, IEnumerable<IDataProcessor> dataProcessors,
+        ILogger<QueueProcessor> logger)
     {
         _queueManager = queueManager;
         _dataProcessors = dataProcessors;
         _logger = logger;
+        _executor = new RoundRobinExecutor(200);
     }
 
     #region Private methods
-    
+
     public async Task StartProcessQueue(CancellationToken cancellationToken)
     {
         while (!_stopProcessData || !cancellationToken.IsCancellationRequested)
@@ -31,12 +35,17 @@ public class QueueProcessor : IQueueProcessor
             {
                 try
                 {
-                    await ProcessData(requestData.Value, cancellationToken);
+                    var request = requestData.Value;
+
+                    async void Action() => await ProcessData(request, cancellationToken);
+                    _executor.Execute(Action);
                 }
                 catch (Exception ex)
                 {
+                    // ReSharper disable once TemplateIsNotCompileTimeConstantProblem
                     _logger.LogError(ex, ex.Message);
                 }
+
                 requestData = _queueManager.DequeueRequest();
             }
 
@@ -52,9 +61,16 @@ public class QueueProcessor : IQueueProcessor
 
     private async Task ProcessData(RequestData requestData, CancellationToken cancellationToken)
     {
-        foreach (var dataProcessor in _dataProcessors)
+        try
         {
-            await dataProcessor.Process(requestData, cancellationToken);
+            foreach (var dataProcessor in _dataProcessors)
+            {
+                await dataProcessor.Process(requestData, cancellationToken);
+            }
+        }
+        finally
+        {
+            GC.Collect();
         }
     }
 

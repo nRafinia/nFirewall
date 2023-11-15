@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using nFirewall.Application.Abstractions;
 
-namespace nFirewall.Presentation;
+namespace nFirewall.Presentation.Middlewares;
 
 public class GetFirewallDataMiddleware
 {

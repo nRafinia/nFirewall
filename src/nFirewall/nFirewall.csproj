@@ -10,7 +10,7 @@
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <Description>Simple firewall for .NET 7 or later</Description>
         <Product>nFirewall</Product>
-        <version>0.2.2.0</version>
+        <version>0.3.2.0</version>
         <Authors>https://github.com/nRafinia</Authors>
         <Company>https://github.com/nRafinia</Company>
         <License>https://opensource.org/licenses/AGPL-3.0</License>
@@ -18,6 +18,10 @@
         <PackageDescription>Simple firewall for .NET 7 or later</PackageDescription>
         <RepositoryUrl>https://github.com/nRafinia/nFirewall</RepositoryUrl>
     </PropertyGroup>
+
+    <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
     
     <ItemGroup>
       <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.13" />
@@ -27,10 +31,5 @@
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       </PackageReference>
     </ItemGroup>
-
-    <ItemGroup>
-        <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    </ItemGroup>
-
     
 </Project>

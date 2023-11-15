@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using nFirewall.Application.BlockModules;
 
-namespace nFirewall.Presentation;
+namespace nFirewall.Presentation.Middlewares;
 
 public class BlockRequestsMiddleware
 {

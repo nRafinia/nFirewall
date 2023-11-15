@@ -1,8 +1,7 @@
 ﻿using Microsoft.Extensions.Hosting;
-using nFirewall.Application;
 using nFirewall.Application.Services;
 
-namespace nFirewall.Presentation;
+namespace nFirewall.Presentation.HostedServices;
 
 public class QueueHostedService : IHostedService
 {
