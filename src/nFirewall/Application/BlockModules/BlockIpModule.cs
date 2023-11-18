@@ -1,28 +1,31 @@
 ﻿using Microsoft.AspNetCore.Http;
 using nFirewall.Application.Services;
 using nFirewall.Domain.Models;
+using nFirewall.Domain.Models.AddressRanges;
 
 namespace nFirewall.Application.BlockModules;
 
 public class BlockIpModule : IBlockModule
 {
-    private readonly IBlockedIpManager _blockedIpManager;
+    private readonly BlackListAddressRange _blackListAddressRange;
 
-    public BlockIpModule(IBlockedIpManager blockedIpManager)
+    public BlockIpModule(BlackListAddressRange blackListAddressRange)
     {
-        _blockedIpManager = blockedIpManager;
+        _blackListAddressRange = blackListAddressRange;
     }
 
-    public async Task<BlockRequestData> CheckRequest(HttpContext context)
+    public Task<BlockRequestData> CheckRequest(HttpContext context)
     {
         if (context.Connection.RemoteIpAddress is null)
         {
-            return BlockRequestData.Ok();
+            return Task.FromResult(BlockRequestData.Ok());
         }
 
-        return await _blockedIpManager.IsIpBlocked(context.Connection.RemoteIpAddress)
+        var result= _blackListAddressRange.IsIpInList(context.Connection.RemoteIpAddress)
             ? BlockRequestData.Block(message: $"Your IP {context.Connection.RemoteIpAddress} is banned")
             : BlockRequestData.Ok();
+
+        return Task.FromResult(result);
     }
 
 }

@@ -15,6 +15,11 @@ public class CalculateSlowestUrlRequest : IDataProcessor, IReportContainer
     public Task Process(RequestData requestData, CancellationToken cancellationToken)
     {
         var timeTaken = requestData.FinishTime - requestData.StartTime;
+        if (new TimeSpan(timeTaken).TotalSeconds <= 1)
+        {
+            return Task.CompletedTask;
+        }
+        
         UrlRequestTime.AddOrUpdate(requestData.Path, timeTaken,
             (key, lastTimeTaken) => lastTimeTaken < timeTaken ? timeTaken : lastTimeTaken);
 

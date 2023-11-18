@@ -16,12 +16,12 @@ public class QueueProcessor : IQueueProcessor
     private bool _stopProcessData;
 
     public QueueProcessor(IQueueManager queueManager, IEnumerable<IDataProcessor> dataProcessors,
-        ILogger<QueueProcessor> logger)
+        ILogger<QueueProcessor> logger, FirewallSetting setting)
     {
         _queueManager = queueManager;
         _dataProcessors = dataProcessors;
         _logger = logger;
-        _executor = new RoundRobinExecutor(200);
+        _executor = new RoundRobinExecutor(setting.ThreadCount);
     }
 
     #region Private methods

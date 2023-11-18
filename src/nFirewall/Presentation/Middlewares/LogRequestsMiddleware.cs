@@ -1,10 +1,10 @@
-﻿using System.Collections.Concurrent;
-using System.Net;
+﻿using System.Net;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using nFirewall.Application.Services;
 using nFirewall.Domain.Models;
+using nFirewall.Domain.Models.AddressRanges;
 using nFirewall.Domain.Shared;
 
 namespace nFirewall.Presentation.Middlewares;
@@ -13,24 +13,21 @@ public class LogRequestsMiddleware
 {
     private readonly IQueueManager _queueManager;
     private readonly ILogger<LogRequestsMiddleware> _logger;
+    private readonly WhiteListAddressRange _whiteListAddress;
 
     private readonly RequestDelegate _next;
 
     public LogRequestsMiddleware(RequestDelegate next, IQueueManager queueManager,
-        ILogger<LogRequestsMiddleware> logger)
+        ILogger<LogRequestsMiddleware> logger, WhiteListAddressRange whiteListAddress)
     {
         _next = next;
         _queueManager = queueManager;
         _logger = logger;
+        _whiteListAddress = whiteListAddress;
     }
 
     public async Task Invoke(HttpContext context)
     {
-        var startTime = DateTime.Now.Ticks;
-        var traceIdentifier = context.TraceIdentifier;
-        var path = context.Request.Path.ToString();
-        var nameIdentifier = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
-        
         var ip = IPAddress.Parse("0.0.0.0");
         if (context.Connection.RemoteIpAddress is not null)
         {
@@ -38,6 +35,17 @@ public class LogRequestsMiddleware
                 ? context.Connection.RemoteIpAddress.MapToIPv4()
                 : context.Connection.RemoteIpAddress;
         }
+
+        if (_whiteListAddress.IsIpInList(ip))
+        {
+            await _next(context);
+            return;
+        }
+
+        var startTime = DateTime.Now.Ticks;
+        var traceIdentifier = context.TraceIdentifier;
+        var path = context.Request.Path.ToString();
+        var nameIdentifier = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
 
         var requestData = new RequestData(traceIdentifier, ip.ConvertFromIpAddressToNumber(), startTime, path,
             nameIdentifier);
@@ -67,4 +75,6 @@ public class LogRequestsMiddleware
 
         _queueManager.EnqueueRequest(requestData);
     }
+
+
 }

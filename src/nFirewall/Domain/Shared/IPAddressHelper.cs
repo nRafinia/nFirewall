@@ -31,17 +31,20 @@ public static class IpAddressHelper
         return result;
     }
 
-    public static string ConvertFromNumberToIpAddress(BigInteger ipAddressValue, bool isIPv6 = false)
+    public static string ConvertFromNumberToIpAddressString(BigInteger ipAddressValue, bool isIPv6 = false)
+        => ConvertFromNumberToIpAddress(ipAddressValue, isIPv6).ToString();
+    
+    public static IPAddress ConvertFromNumberToIpAddress(BigInteger ipAddressValue, bool isIPv6 = false)
     {
         if (ipAddressValue == 2130706433)
         {
             // IPv4 localhost address
-            return IPAddress.Loopback.ToString();
+            return IPAddress.Loopback;
         }
         else if (ipAddressValue == 0x0000000000000001)
         {
             // IPv6 localhost address
-            return IPAddress.IPv6Loopback.ToString();
+            return IPAddress.IPv6Loopback;
         }
     
         byte[] bytes;
@@ -49,14 +52,14 @@ public static class IpAddressHelper
         {
             bytes = ipAddressValue.ToByteArray();
             Array.Reverse(bytes);
-            return new IPAddress(bytes, 0).ToString();
+            return new IPAddress(bytes, 0);
         }
         else
         {
             bytes = ipAddressValue.ToByteArray();
             Array.Resize(ref bytes, 4);
             Array.Reverse(bytes);
-            return new IPAddress(bytes).ToString();
+            return new IPAddress(bytes);
         }
     }
 

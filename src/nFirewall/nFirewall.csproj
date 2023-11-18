@@ -10,7 +10,7 @@
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <Description>Simple firewall for .NET 7 or later</Description>
         <Product>nFirewall</Product>
-        <version>0.3.2.0</version>
+        <version>0.7.0.0</version>
         <Authors>https://github.com/nRafinia</Authors>
         <Company>https://github.com/nRafinia</Company>
         <License>https://opensource.org/licenses/AGPL-3.0</License>
@@ -24,6 +24,7 @@
     </ItemGroup>
     
     <ItemGroup>
+      <PackageReference Include="IPAddressRange" Version="6.0.0" />
       <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.13" />
       <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="7.0.13" />
       <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="7.0.13">

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using nFirewall.Application.BlockModules;
+using nFirewall.Domain.Models;
 
 namespace nFirewall.Presentation.Middlewares;
 

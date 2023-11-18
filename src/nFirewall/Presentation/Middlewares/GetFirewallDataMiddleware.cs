@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using nFirewall.Application.Abstractions;
+using nFirewall.Domain.Models;
 
 namespace nFirewall.Presentation.Middlewares;
 
@@ -8,16 +9,18 @@ public class GetFirewallDataMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly IEnumerable<IReportContainer> _dataProcessors;
+    private readonly FirewallSetting _setting;
 
-    public GetFirewallDataMiddleware(RequestDelegate next, IEnumerable<IReportContainer> dataProcessors)
+    public GetFirewallDataMiddleware(RequestDelegate next, IEnumerable<IReportContainer> dataProcessors, FirewallSetting setting)
     {
         _next = next;
         _dataProcessors = dataProcessors;
+        _setting = setting;
     }
 
     public async Task Invoke(HttpContext context)
     {
-        if (!string.Equals(context.Request.Path.ToString(), $"/{Consts.GetReportPath}", StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(context.Request.Path.ToString(), $"/{_setting.ReportPath}", StringComparison.OrdinalIgnoreCase))
         {
             await _next(context);
             return;

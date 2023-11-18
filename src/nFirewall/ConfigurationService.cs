@@ -1,15 +1,13 @@
-using System.Reflection;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using nFirewall.Application.Abstractions;
 using nFirewall.Application.BlockModules;
 using nFirewall.Application.DataProcessors;
 using nFirewall.Application.Services;
+using nFirewall.Domain.Models;
+using nFirewall.Domain.Models.AddressRanges;
 using nFirewall.Domain.Shared;
-using nFirewall.Persistence;
-using nFirewall.Presentation;
 using nFirewall.Presentation.HostedServices;
 using nFirewall.Presentation.Middlewares;
 
@@ -18,19 +16,17 @@ namespace nFirewall;
 public static class ConfigurationService
 {
     public static IServiceCollection AddFirewallService(this IServiceCollection services,
-        IConfiguration configuration)
+        IConfiguration configuration, Func<FirewallSetting>? settings = null)
     {
-        AddDbContext(services);
-
         services.AddHostedService<QueueHostedService>();
-        services.AddHostedService<BlockedIpManagerHostedServiceService>();
         services.AddSingleton<IQueueManager, QueueManager>();
         services.AddSingleton<IQueueProcessor, QueueProcessor>();
-        services.AddSingleton<IBlockedIpManager, BlockedIpManager>();
 
         AddDataProcessors(services);
         AddBlockModules(services);
         AddReportContainer(services);
+
+        LoadSettings(services, configuration, settings);
 
         //services.AddMemoryCache();
 
@@ -42,23 +38,11 @@ public static class ConfigurationService
         app.UseMiddleware<BlockRequestsMiddleware>();
         app.UseMiddleware<LogRequestsMiddleware>();
         app.UseMiddleware<GetFirewallDataMiddleware>();
-        
+
         return app;
     }
 
     #region private methods
-
-    private static void AddDbContext(IServiceCollection services)
-    {
-        var dbPath = Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "nFirewall.db");
-
-        services.AddDbContext<ApplicationDbContext>(options =>
-        {
-            options.UseSqlite($"Data Source={dbPath}",
-                builder => builder.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName)
-            );
-        });
-    }
 
     private static void AddDataProcessors(IServiceCollection services)
     {
@@ -85,6 +69,21 @@ public static class ConfigurationService
         {
             services.AddSingleton(typeof(IReportContainer), module);
         }
+    }
+
+    private static void LoadSettings(IServiceCollection services, IConfiguration configuration,
+        Func<FirewallSetting>? settings = null)
+    {
+        var firewallSetting = settings?.Invoke() ??
+                              configuration.GetSection("FirewallSetting").Get<FirewallSetting>() ??
+                              new FirewallSetting();
+        services.AddSingleton(firewallSetting);
+
+        var whiteList = new WhiteListAddressRange(firewallSetting.WhiteList);
+        services.AddSingleton(whiteList);
+
+        var blackList = new BlackListAddressRange(firewallSetting.BlackList);
+        services.AddSingleton(blackList);
     }
 
     #endregion

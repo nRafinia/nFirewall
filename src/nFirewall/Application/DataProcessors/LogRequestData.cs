@@ -20,7 +20,7 @@ public class LogRequestData : IDataProcessor
         var startDate = new DateTime(requestData.StartTime);
         var endDate = new DateTime(requestData.FinishTime);
         var isIpV6 = requestData.Ip > int.MaxValue || requestData.Ip == 0x0000000000000001;
-        var ip = IpAddressHelper.ConvertFromNumberToIpAddress(requestData.Ip, isIpV6);
+        var ip = IpAddressHelper.ConvertFromNumberToIpAddressString(requestData.Ip, isIpV6);
 
         _logger.LogInformation(
             "request {RequestDataTraceIdentifier}, IP:{Ip}, started={StartDate}, end={EndDate}, contentType={RequestDataContentType}",
