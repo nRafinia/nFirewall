@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Numerics;
 using nFirewall.Application.Abstractions;
+using nFirewall.Application.DataProcessors.Models;
 using nFirewall.Domain.Models;
 using nFirewall.Domain.Shared;
 
@@ -10,13 +11,15 @@ namespace nFirewall.Application.DataProcessors;
 
 public class CalculateTotalIpRequest : IDataProcessor, IReportContainer
 {
-    private static readonly ConcurrentDictionary<BigInteger, long> IpRequestTime = new();
+    private static readonly ConcurrentDictionary<BigInteger, CalculateTotalIpData> IpRequestTime = new();
 
     public string Name => "TotalIPRequest";
 
     public Task Process(RequestData requestData, CancellationToken cancellationToken)
     {
-        IpRequestTime.AddOrUpdate(requestData.Ip, 1, (key, currentCount) => currentCount + 1);
+        IpRequestTime.AddOrUpdate(requestData.Ip, 
+            new CalculateTotalIpData(), 
+            (key, current) => current.Increase());
 
         if (IpRequestTime.Count > 10000)
         {
@@ -35,7 +38,9 @@ public class CalculateTotalIpRequest : IDataProcessor, IReportContainer
             .Select(d => new
             {
                 IP = IpAddressHelper.ConvertFromNumberToIpAddressString(d.Key), 
-                Count = d.Value
+                Start = new DateTime(d.Value.Start),
+                End = new DateTime(d.Value.End),
+                d.Value.Total
             })
             .ToList();
 

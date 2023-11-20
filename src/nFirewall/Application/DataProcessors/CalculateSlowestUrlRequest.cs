@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using nFirewall.Application.Abstractions;
+using nFirewall.Application.DataProcessors.Models;
 using nFirewall.Domain.Models;
 
 // ReSharper disable once UnusedParameter.Local
@@ -8,7 +9,7 @@ namespace nFirewall.Application.DataProcessors;
 
 public class CalculateSlowestUrlRequest : IDataProcessor, IReportContainer
 {
-    private static readonly ConcurrentDictionary<string, long> UrlRequestTime = new();
+    private static readonly ConcurrentDictionary<string, CalculateSlowestUrlData> UrlRequestTime = new();
 
     public string Name => "SlowUrlRequest";
 
@@ -19,15 +20,16 @@ public class CalculateSlowestUrlRequest : IDataProcessor, IReportContainer
         {
             return Task.CompletedTask;
         }
-        
-        UrlRequestTime.AddOrUpdate(requestData.Path, timeTaken,
-            (key, lastTimeTaken) => lastTimeTaken < timeTaken ? timeTaken : lastTimeTaken);
+
+        UrlRequestTime.AddOrUpdate(requestData.Path,
+            new CalculateSlowestUrlData(),
+            (key, lastTimeData) => lastTimeData.Set(timeTaken));
 
         if (UrlRequestTime.Count > 10000)
         {
             CleanList();
         }
-        
+
         return Task.CompletedTask;
     }
 
@@ -35,14 +37,19 @@ public class CalculateSlowestUrlRequest : IDataProcessor, IReportContainer
     {
         var clonedData = UrlRequestTime.ToList();
         object data = clonedData
-            .OrderByDescending(d => d.Value)
+            .OrderByDescending(d => d.Value.Duration)
             .Take(100)
-            .Select(d => new { Url = d.Key, Time = new TimeSpan(d.Value).ToString() })
+            .Select(d => new
+            {
+                Url = d.Key,
+                Duration = new TimeSpan(d.Value.Duration).ToString(),
+                Time = new DateTime(d.Value.Time)
+            })
             .ToList();
 
         return Task.FromResult(data);
     }
-    
+
     private static void CleanList()
     {
         var clonedData = UrlRequestTime.ToList();

@@ -14,8 +14,13 @@ public class QueueManager : IQueueManager
 
     public RequestData? DequeueRequest()
     {
+        if(FinishedDataQueue.IsEmpty)
+        {
+            return default;
+        }
+        
         return FinishedDataQueue.TryDequeue(out var data)
             ? data
-            : default(RequestData?);
+            : default;
     }
 }
