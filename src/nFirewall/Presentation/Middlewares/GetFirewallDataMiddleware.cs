@@ -11,7 +11,8 @@ public class GetFirewallDataMiddleware
     private readonly IEnumerable<IReportContainer> _dataProcessors;
     private readonly FirewallSetting _setting;
 
-    public GetFirewallDataMiddleware(RequestDelegate next, IEnumerable<IReportContainer> dataProcessors, FirewallSetting setting)
+    public GetFirewallDataMiddleware(RequestDelegate next, IEnumerable<IReportContainer> dataProcessors,
+        FirewallSetting setting)
     {
         _next = next;
         _dataProcessors = dataProcessors;
@@ -20,7 +21,8 @@ public class GetFirewallDataMiddleware
 
     public async Task Invoke(HttpContext context)
     {
-        if (!string.Equals(context.Request.Path.ToString(), $"/{_setting.ReportPath}", StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(context.Request.Path.ToString(), $"/{_setting.ReportPath}",
+                StringComparison.OrdinalIgnoreCase))
         {
             await _next(context);
             return;
@@ -29,13 +31,33 @@ public class GetFirewallDataMiddleware
         await SendReport(context);
     }
 
-    private async Task SendReport(HttpContext content)
+    private async Task SendReport(HttpContext context)
     {
-        if (!content.Request.Query.TryGetValue("type", out var type))
+        if (!context.Request.Query.TryGetValue("type", out var type))
         {
+            await SendCommands(context);
             return;
         }
-        
+
+        await SendProviderData(context, type.ToString());
+    }
+
+    private async Task SendCommands(HttpContext context)
+    {
+        var dataProcessors = _dataProcessors
+            .Select(c => c.Name)
+            .ToList();
+
+        context.Response.Clear();
+        context.Response.Headers.Clear();
+        context.Response.ContentType = "text/html";
+        var content = string.Join("", dataProcessors.Select(d => $"<a href=\"?type={d}\">{d}</a><br/>"));
+        var responseHtml = $"<html><body>{content}</body></html>";
+        await context.Response.WriteAsync(responseHtml);
+    }
+
+    private async Task SendProviderData(HttpContext context, string type)
+    {
         var dataProcessor = _dataProcessors.FirstOrDefault(d =>
             string.Equals(d.Name, type, StringComparison.CurrentCultureIgnoreCase));
 
@@ -45,10 +67,10 @@ public class GetFirewallDataMiddleware
         }
 
         var result = await dataProcessor.GetData();
-        
-        content.Response.Clear();
-        content.Response.Headers.Clear();
-        content.Response.ContentType = "application/json";
-        await content.Response.WriteAsync(JsonSerializer.Serialize(result));
+
+        context.Response.Clear();
+        context.Response.Headers.Clear();
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsync(JsonSerializer.Serialize(result));
     }
 }

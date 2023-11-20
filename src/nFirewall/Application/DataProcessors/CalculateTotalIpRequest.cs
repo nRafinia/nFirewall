@@ -33,7 +33,7 @@ public class CalculateTotalIpRequest : IDataProcessor, IReportContainer
     {
         var clonedData = IpRequestTime.ToList();
         object data = clonedData
-            .OrderByDescending(d => d.Value)
+            .OrderByDescending(d => d.Value.Total)
             .Take(100)
             .Select(d => new
             {
